@@ -21,11 +21,6 @@ pip install flask werkzeug
 python run.py
 ```
 
-Then open your browser at:
-```
-http://127.0.0.1:5000
-```
-
 That's it! The database is created automatically on first run.
 
 ---
