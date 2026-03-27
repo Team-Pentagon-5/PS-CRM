@@ -11,14 +11,22 @@ if os.environ.get('FLASK_SECRET_KEY'):
 from app import app
 from database import init_db, migrate_db
 
-# ── Run on every startup (works for both Gunicorn and python run.py) ──────
-_data_dir = os.environ.get('RENDER_DATA_DIR', os.path.dirname(__file__))
-os.makedirs(_data_dir, exist_ok=True)
-os.makedirs(os.path.join(_data_dir, 'uploads'), exist_ok=True)
+# ── Startup init ───────────────────────────────────────────────────────────
+# CRITICAL: On Render, /data is mounted by the PLATFORM before gunicorn runs.
+# NEVER call os.makedirs('/data') — it causes PermissionError 13.
+# ONLY create subfolders INSIDE /data — that is allowed.
+_data_dir    = os.environ.get('RENDER_DATA_DIR',
+                os.path.dirname(os.path.abspath(__file__)))
+_uploads_dir = os.path.join(_data_dir, 'uploads')
 
-init_db()      # creates tables if DB is brand new
-migrate_db()   # adds missing tables/columns to existing DB
+# This is safe — /data exists (mounted by Render), we just add /data/uploads
+os.makedirs(_uploads_dir, exist_ok=True)
 
+# Initialise database — safe to call on every startup
+init_db()
+migrate_db()
+
+# ── Entry point ────────────────────────────────────────────────────────────
 if __name__ == '__main__':
     print()
     print("=" * 50)
