@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, session, redirect, url_for, request, flash
+from flask import Blueprint, render_template, session, redirect, url_for, request, flash, current_app
 from functools import wraps
 from database import get_db
 from werkzeug.utils import secure_filename
@@ -6,7 +6,6 @@ import os, datetime
 
 citizen_bp = Blueprint('citizen', __name__)
 
-UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'uploads')
 ALLOWED = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 def citizen_required(f):
@@ -23,8 +22,11 @@ def save_image(file):
         ext = file.filename.rsplit('.', 1)[-1].lower()
         if ext in ALLOWED:
             fname = f"{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}_{secure_filename(file.filename)}"
-            os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-            file.save(os.path.join(UPLOAD_FOLDER, fname))
+            # Use app config upload folder — resolved lazily after disk mount
+            upload_dir = current_app.config.get('UPLOAD_FOLDER',
+                os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'uploads'))
+            os.makedirs(upload_dir, exist_ok=True)
+            file.save(os.path.join(upload_dir, fname))
             return fname
     return None
 

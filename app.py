@@ -8,9 +8,20 @@ import os, re
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'pscrm-dev-only-change-in-prod')
 
-# On Render use persistent disk at /data, locally use static/uploads
-_DATA_DIR     = os.environ.get('RENDER_DATA_DIR', os.path.join(os.path.dirname(__file__)))
-UPLOAD_FOLDER = os.path.join(_DATA_DIR, 'uploads')
+# Upload folder — resolved lazily at runtime so Render disk
+# doesn't need to be mounted at import time
+def get_upload_folder():
+    data_dir = os.environ.get('RENDER_DATA_DIR', '')
+    if data_dir and os.path.isdir(data_dir):
+        folder = os.path.join(data_dir, 'uploads')
+    else:
+        folder = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
+    os.makedirs(folder, exist_ok=True)
+    return folder
+
+UPLOAD_FOLDER = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB max
@@ -20,7 +31,7 @@ app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB max
 @app.route('/uploads/<path:filename>')
 def serve_upload(filename):
     """Serve uploaded complaint images from the persistent data directory."""
-    return send_from_directory(UPLOAD_FOLDER, filename)
+    return send_from_directory(get_upload_folder(), filename)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -205,6 +216,17 @@ app.register_blueprint(admin_bp,   url_prefix='/admin')
 app.register_blueprint(citizen_bp, url_prefix='/citizen')
 app.register_blueprint(head_bp,    url_prefix='/head')
 
+# ── Create upload folder lazily after disk is mounted ─────────────────────
+@app.before_request
+def ensure_upload_dir():
+    """
+    Resolve and create the uploads directory on the first real request.
+    By this point Render has already mounted the /data disk, so
+    get_upload_folder() works safely without any PermissionError.
+    """
+    folder = get_upload_folder()
+    app.config['UPLOAD_FOLDER'] = folder
+
 # context_processor moved to bottom of file
 
 @app.errorhandler(404)
@@ -218,7 +240,6 @@ def too_large(e):
 
 if __name__ == '__main__':
     init_db()
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     app.run(debug=True, port=5000)
 
 # ── GLOBAL SEARCH ──────────────────────────────────────────────────────────────

@@ -11,23 +11,17 @@ if os.environ.get('FLASK_SECRET_KEY'):
 from app import app
 from database import init_db, migrate_db
 
-# ── Startup init ───────────────────────────────────────────────────────────
-# CRITICAL: On Render, /data is mounted by the PLATFORM before gunicorn runs.
-# NEVER call os.makedirs('/data') — it causes PermissionError 13.
-# ONLY create subfolders INSIDE /data — that is allowed.
-_data_dir    = os.environ.get('RENDER_DATA_DIR',
-                os.path.dirname(os.path.abspath(__file__)))
-_uploads_dir = os.path.join(_data_dir, 'uploads')
-
-# This is safe — /data exists (mounted by Render), we just add /data/uploads
-os.makedirs(_uploads_dir, exist_ok=True)
-
-# Initialise database — safe to call on every startup
+# ── Database init (safe — only creates tables, no filesystem ops) ─────────
 init_db()
 migrate_db()
 
-# ── Entry point ────────────────────────────────────────────────────────────
+# ── Entry point (local dev only) ──────────────────────────────────────────
 if __name__ == '__main__':
+    # Create uploads folder for local development only
+    _local_uploads = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
+    os.makedirs(_local_uploads, exist_ok=True)
+
     print()
     print("=" * 50)
     print("  PS-CRM Server Starting...")
