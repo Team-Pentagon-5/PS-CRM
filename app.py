@@ -6,9 +6,11 @@ from database import get_db, init_db
 import os, re
 
 app = Flask(__name__)
-app.secret_key = 'pscrm-secret-key-2026-change-in-production'
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'pscrm-dev-only-change-in-prod')
 
-UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'uploads')
+# On Render use persistent disk at /data, locally use static/uploads
+_DATA_DIR     = os.environ.get('RENDER_DATA_DIR', os.path.join(os.path.dirname(__file__)))
+UPLOAD_FOLDER = os.path.join(_DATA_DIR, 'uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB max

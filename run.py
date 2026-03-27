@@ -3,18 +3,23 @@ PS-CRM — Public Services CRM
 Run this file to start the server.
 """
 import os
+
 if os.environ.get('FLASK_SECRET_KEY'):
     import app as _app_mod
     _app_mod.app.secret_key = os.environ['FLASK_SECRET_KEY']
+
 from app import app
 from database import init_db, migrate_db
 
+# ── Run on every startup (works for both Gunicorn and python run.py) ──────
+_data_dir = os.environ.get('RENDER_DATA_DIR', os.path.dirname(__file__))
+os.makedirs(_data_dir, exist_ok=True)
+os.makedirs(os.path.join(_data_dir, 'uploads'), exist_ok=True)
+
+init_db()      # creates tables if DB is brand new
+migrate_db()   # adds missing tables/columns to existing DB
+
 if __name__ == '__main__':
-    # Initialize DB (creates tables if not exist)
-    init_db()
-    # Run migrations (adds new tables/columns to existing DB)
-    migrate_db()
-    os.makedirs(os.path.join('static', 'uploads'), exist_ok=True)
     print()
     print("=" * 50)
     print("  PS-CRM Server Starting...")
