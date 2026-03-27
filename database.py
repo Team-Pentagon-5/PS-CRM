@@ -2,9 +2,7 @@ import sqlite3
 import os
 from werkzeug.security import generate_password_hash
 
-# On Render, use /data (persistent disk). Locally, use project folder.
-_DATA_DIR = os.environ.get('RENDER_DATA_DIR', os.path.dirname(__file__))
-DB_PATH   = os.path.join(_DATA_DIR, 'pscrm.db')
+DB_PATH = os.path.join(os.path.dirname(__file__), 'pscrm.db')
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)

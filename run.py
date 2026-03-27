@@ -3,25 +3,18 @@ PS-CRM — Public Services CRM
 Run this file to start the server.
 """
 import os
-
 if os.environ.get('FLASK_SECRET_KEY'):
     import app as _app_mod
     _app_mod.app.secret_key = os.environ['FLASK_SECRET_KEY']
-
 from app import app
 from database import init_db, migrate_db
 
-# ── Database init (safe — only creates tables, no filesystem ops) ─────────
-init_db()
-migrate_db()
-
-# ── Entry point (local dev only) ──────────────────────────────────────────
 if __name__ == '__main__':
-    # Create uploads folder for local development only
-    _local_uploads = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
-    os.makedirs(_local_uploads, exist_ok=True)
-
+    # Initialize DB (creates tables if not exist)
+    init_db()
+    # Run migrations (adds new tables/columns to existing DB)
+    migrate_db()
+    os.makedirs(os.path.join('static', 'uploads'), exist_ok=True)
     print()
     print("=" * 50)
     print("  PS-CRM Server Starting...")
