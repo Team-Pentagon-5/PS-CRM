@@ -41,7 +41,7 @@
     {% if complaint.image_path %}
     <div>
       <div class="form-label">📎 Attached Photo</div>
-      <img src="{{ url_for('static', filename='uploads/' + complaint.image_path) }}"
+      <img src="{{ url_for('serve_upload', filename=complaint.image_path) }}"
            style="max-width:100%;border-radius:10px;border:1px solid var(--border);margin-top:6px;" alt="Complaint image">
     </div>
     {% endif %}
